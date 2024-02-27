@@ -16,4 +16,8 @@ public class GenericService {
     public User getUser(String username) {
         return userRepository.findByUsername(username);
     }
+
+    public User getUser(long userId) {
+        return userRepository.findByUserId(userId);
+    }
 }

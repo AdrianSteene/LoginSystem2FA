@@ -6,6 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -16,7 +17,7 @@ public class Login implements Serializable {
     private long loginId;
     private long userId;
     private String loginToken;
-    private LocalDateTime created;
+    private Instant created;
     private boolean expired;
 
     public long getLoginId() {
@@ -43,11 +44,11 @@ public class Login implements Serializable {
         this.loginToken = loginToken;
     }
 
-    public LocalDateTime getCreated() {
+    public Instant getCreated() {
         return created;
     }
 
-    public void setCreated(LocalDateTime created) {
+    public void setCreated(Instant created) {
         this.created = created;
     }
 
