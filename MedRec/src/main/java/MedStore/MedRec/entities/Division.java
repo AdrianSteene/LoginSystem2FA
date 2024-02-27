@@ -13,6 +13,7 @@ public class Division implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long divisionId;
     private String divisionName;
+
     public long getDivisionId() {
         return divisionId;
     }

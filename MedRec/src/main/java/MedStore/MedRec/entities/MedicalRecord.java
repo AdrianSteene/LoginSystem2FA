@@ -18,6 +18,7 @@ public class MedicalRecord implements Serializable {
     private long doctorId;
     private long divisionId;
     private String note;
+
     public long getRecordId() {
         return recordId;
     }

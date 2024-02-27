@@ -46,7 +46,7 @@ public class AuthenticationService extends GenericService {
 
     public LoginToken createLoginToken(LoginCredentials loginCredentials, String salt, User user) throws BadRequestException {
         String passwordhash = PasswordEncryptor.encrypt(loginCredentials.password(), salt);
-        if (PasswordEncryptor.isNotValidHash(user.getPasswordhash(), passwordhash)){
+        if (PasswordEncryptor.isNotValidHash(user.getPasswordhash(), passwordhash)) {
             log.info("Unsuccessful login attempt for user: " + user.getUserId());
             throw new BadRequestException("Invalid login credentials");
         } else {

@@ -90,7 +90,7 @@ public class User implements Serializable {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return "User{" +
                 "userId=" + userId +
                 ", username='" + username + '\'' +

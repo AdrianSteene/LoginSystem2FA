@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets;
 
 public class PasswordEncryptor {
 
-    public static String encrypt(String password, String salt){
+    public static String encrypt(String password, String salt) {
         return Hashing
                 .sha256()
                 .hashString(
@@ -15,7 +15,7 @@ public class PasswordEncryptor {
                 .toString();
     }
 
-    public static boolean isNotValidHash(String passwordhash1, String passwordhash2){
+    public static boolean isNotValidHash(String passwordhash1, String passwordhash2) {
         return !passwordhash1.equals(passwordhash2);
     }
 }
