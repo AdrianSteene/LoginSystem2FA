@@ -1,4 +1,4 @@
-package MedStore.MedRec.dto.outgoingDto;
+package MedStore.MedRec.dto.outgoing;
 
 import java.io.Serializable;
 

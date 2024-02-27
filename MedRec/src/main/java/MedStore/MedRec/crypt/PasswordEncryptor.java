@@ -1,6 +1,5 @@
 package MedStore.MedRec.crypt;
 
-import MedStore.MedRec.crypt.Salt;
 import com.google.common.hash.Hashing;
 
 import java.nio.charset.StandardCharsets;
@@ -16,7 +15,7 @@ public class PasswordEncryptor {
                 .toString();
     }
 
-    public static boolean checkPassword(String passwordhash1, String passwordhash2){
-        return passwordhash1.equals(passwordhash2);
+    public static boolean isNotValidHash(String passwordhash1, String passwordhash2){
+        return !passwordhash1.equals(passwordhash2);
     }
 }

@@ -1,8 +1,5 @@
 package MedStore.MedRec.crypt;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Random;
-
 public class Salt {
     private final String salt;
 
