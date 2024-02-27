@@ -7,9 +7,7 @@ public class Salt {
     private final String salt;
 
     public Salt() {
-        byte[] array = new byte[7];
-        new Random().nextBytes(array);
-        this.salt = new String(array, StandardCharsets.UTF_8);
+        this.salt = MedRecCryptUtils.randomString(MedRecCryptUtils.SALT_LENGTH);
     }
 
     public String getSalt() {
