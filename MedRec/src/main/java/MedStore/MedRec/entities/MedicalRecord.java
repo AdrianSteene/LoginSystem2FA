@@ -1,13 +1,17 @@
-package MedStore.enitities;
+package MedStore.MedRec.entities;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import org.antlr.v4.runtime.misc.NotNull;
+import jakarta.persistence.Table;
+
+import java.io.Serializable;
+
 
 @Entity
-public class MedicalRecord {
+public class MedicalRecord implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long recordId;
@@ -16,7 +20,6 @@ public class MedicalRecord {
     private long doctorId;
     private long divisionId;
     private String note;
-
     public long getRecordId() {
         return recordId;
     }

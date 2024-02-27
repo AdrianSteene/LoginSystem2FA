@@ -1,20 +1,19 @@
-package MedStore.enitities;
+package MedStore.MedRec.entities;
 
-import MedStore.enums.Role;
+import MedStore.MedRec.enums.Role;
 import jakarta.annotation.Nullable;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
+import java.io.Serializable;
 import java.util.Objects;
-import java.util.Set;
-
-import static jakarta.persistence.CascadeType.ALL;
 
 @Entity
-public class User {
+public class User implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long userId;
@@ -24,8 +23,6 @@ public class User {
     private Role role;
     @Nullable
     private Long divisionId;
-    @OneToMany(cascade=ALL, mappedBy="user")
-    private Set<MedicalRecord> medicalRecords;
 
     public long getUserId() {
         return userId;
@@ -67,11 +64,12 @@ public class User {
         this.role = role;
     }
 
+    @Nullable
     public Long getDivisionId() {
         return divisionId;
     }
 
-    public void setDivisionId(Long divisionId) {
+    public void setDivisionId(@Nullable Long divisionId) {
         this.divisionId = divisionId;
     }
 
