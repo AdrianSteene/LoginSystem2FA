@@ -1,10 +1,9 @@
 package MedStore.MedRec.controller;
 
 import MedStore.MedRec.dto.incoming.TwoFACode;
-import MedStore.MedRec.dto.internal.LoginCredentials;
+import MedStore.MedRec.dto.internal.UserDto;
 import MedStore.MedRec.dto.outgoing.JWT;
 import MedStore.MedRec.dto.outgoing.LoginToken;
-import MedStore.MedRec.entities.User;
 import MedStore.MedRec.repository.LoginRepository;
 import MedStore.MedRec.repository.UserRepository;
 import MedStore.MedRec.service.AuthenticationService;
@@ -36,10 +35,19 @@ public class UserController {
         }
     }
 
-    @GetMapping("/auth/twofa")
-    JWT jwt(HttpServletRequest request, @RequestBody TwoFACode twoFACode) {
+    @GetMapping("/auth/2fa")
+    JWT jwt(HttpServletRequest request, @RequestBody TwoFACode twoFACode) throws BadRequestException {
         log.info("2fa request received, requestId: " + request.getRequestId());
-        //if (twoFACode == null) throw new BadRequestException("Invalid login credentials");
-        return authenticationService.validate2FA(request, twoFACode);
+        if (twoFACode == null || twoFACode.twoFACode().isBlank()) throw new BadRequestException("Invalid login credentials");
+        return authenticationService.validate2FALogin(request, twoFACode);
+    }
+
+
+    //THIS IS AN ENDPOINT FOR TESTING
+    @GetMapping("/auth/testJWT")
+    public String testJWT(HttpServletRequest request) {
+        log.info("Test JWT request received, requestId: " + request.getRequestId());
+        UserDto userDto = authenticationService.validateJWT(request);
+        return "nice";
     }
 }

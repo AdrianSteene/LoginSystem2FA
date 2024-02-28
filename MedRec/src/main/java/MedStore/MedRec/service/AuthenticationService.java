@@ -2,7 +2,6 @@ package MedStore.MedRec.service;
 
 import MedStore.MedRec.crypt.MedRecCryptUtils;
 import MedStore.MedRec.crypt.PasswordEncryptor;
-import MedStore.MedRec.dto.incoming.IncomingJWT;
 import MedStore.MedRec.dto.incoming.TwoFACode;
 import MedStore.MedRec.dto.internal.LoginCredentials;
 import MedStore.MedRec.dto.internal.UserDto;
@@ -37,7 +36,8 @@ import java.util.UUID;
 public class AuthenticationService extends GenericService {
     private final LoginRepository loginRepository;
     private final String AUTHORIZATION_HEADER = "Authorization";
-    private final long EXPIRATION_TIME = 30/*days*/ * 24/*hours*/ * 60/*minutes*/;
+    private final long JWT_EXPIRATION_TIME = 1/*days*/ * 1/*hours*/ * 15/*minutes*/;
+    private final long LOGIN_TOKEN_EXPIRATION_TIME = 30/*days*/ * 24/*hours*/ * 60/*minutes*/;
     private final String jwtSecret = "asdfSFS34wfsdfsdfSDSD32dfsddDDerQSNCK34SOWEK5354fdgdf4"; //TODO: fetch from vault
     private final String userId = "userId";
     private final String role = "role";
@@ -99,10 +99,33 @@ public class AuthenticationService extends GenericService {
         }
     }
 
-    public JWT validate2FA(HttpServletRequest request, TwoFACode twoFACode) {
-        final String authorization = request.getHeader(AUTHORIZATION_HEADER);
-        log.error("Authorization: " + authorization);
-        return new JWT("thisisatoken");
+    public JWT validate2FALogin(HttpServletRequest request, TwoFACode twoFACode) throws IllegalArgumentException {
+        String loginToken = extractBearerToken(request);
+        User user = validateLoginToken(loginToken);
+        validate2FACode(twoFACode); // TODO: Implement 2FA validation
+        return createJWT(user);
+    }
+
+    private String extractBearerToken(HttpServletRequest request) {
+        String authorizationHeader = request.getHeader(AUTHORIZATION_HEADER);
+        if (authorizationHeader == null || authorizationHeader.isBlank()) throw new IllegalArgumentException("Invalid login credentials");
+        return authorizationHeader.substring("Bearer".length()).trim().replaceAll("\"", "");
+    }
+
+    private User validateLoginToken(String loginToken) {
+        Login login = loginRepository.findByLoginToken(loginToken);
+        if (login == null || login.isExpired() || isNotWithinUsageTime(login))
+            throw new IllegalArgumentException("Invalid login credentials");
+        login.setExpired(true);
+        loginRepository.save(login);
+        return getUser(login.getUserId());
+    }
+
+    private boolean isNotWithinUsageTime(Login login) {
+        return login.getCreated().isBefore(Instant.now().minus(LOGIN_TOKEN_EXPIRATION_TIME, ChronoUnit.MINUTES));
+    }
+
+    private void validate2FACode(TwoFACode twoFACode) {
     }
 
     private JWT createJWT(User user) {
@@ -117,39 +140,41 @@ public class AuthenticationService extends GenericService {
                         .setSubject(user.getUsername())
                         .setId(UUID.randomUUID().toString())
                         .setIssuedAt(Date.from(now))
-                        .setExpiration(Date.from(now.plus(EXPIRATION_TIME, ChronoUnit.MINUTES)))
+                        .setExpiration(Date.from(now.plus(JWT_EXPIRATION_TIME, ChronoUnit.MINUTES)))
                         .signWith(hmacKey)
                         .compact();
 
         return new JWT(token);
     }
 
-    public UserDto validateToken(IncomingJWT jwt) {
+    public UserDto validateJWT(HttpServletRequest request) {
         Key hmacKey = new SecretKeySpec(Base64.getDecoder().decode(jwtSecret),
                 SignatureAlgorithm.HS256.getJcaName());
+        String jwtToken = extractBearerToken(request);
         try {
             Jws<Claims> jwtClaims = Jwts.parserBuilder()
                     .setSigningKey(hmacKey)
                     .build()
-                    .parseClaimsJws(jwt.getToken());
+                    .parseClaimsJws(jwtToken);
             Claims body = jwtClaims.getBody();
             long claimedUserID =
-                    (Long) Optional.ofNullable(body.get(userId)).orElseThrow(() -> new IllegalArgumentException("Invalid token"));
+                    (long) ((int) Optional.ofNullable(body.get(userId)).orElseThrow(() -> new IllegalArgumentException("Invalid token")));
             Role claimedRole =
                     Role.valueOf(Optional.ofNullable(body.get(role)).orElseThrow(() -> new IllegalArgumentException("Invalid token")).toString());
-            Long claimedDivisionId = (Long) body.get(divisionId);
+            Object o = body.get(divisionId);
+            Long claimedDivisionId = o == null ? null : (Long) ((long) ((int) o));
             return new UserDto(claimedUserID, claimedRole, claimedDivisionId);
         } catch (ExpiredJwtException e) {
-            log.info(String.format("Token %s expired", jwt.getToken()));
+            log.info(String.format("Token %s expired", jwtToken));
             throw new IllegalArgumentException("Token expired: " + e.getMessage());
         } catch (UnsupportedJwtException e) {
-            log.info(String.format("Token %s unsupported", jwt.getToken()));
+            log.info(String.format("Token %s unsupported", jwtToken));
             throw new IllegalArgumentException("Token unsupported: " + e.getMessage());
         } catch (MalformedJwtException e) {
-            log.info(String.format("Token %s malformed", jwt.getToken()));
+            log.info(String.format("Token %s malformed", jwtToken));
             throw new IllegalArgumentException("Token malformed: " + e.getMessage());
         } catch (SignatureException e) {
-            log.info(String.format("Token %s signature exception", jwt.getToken()));
+            log.info(String.format("Token %s signature exception", jwtToken));
             throw new IllegalArgumentException(e.getMessage());
         }
     }

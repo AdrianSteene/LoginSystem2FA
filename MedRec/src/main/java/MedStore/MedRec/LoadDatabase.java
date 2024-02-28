@@ -23,7 +23,7 @@ class LoadDatabase {
         user.setSalt(salt.getSalt());
         user.setPasswordhash(PasswordEncryptor.encrypt("weakPassword", salt.getSalt()));
         user.setRole(Role.ADMIN);
-        user.setDivisionId(1L);
+        user.setDivisionId(null);
         return args -> {
             log.info("Preloading " + userRepository.save(user));
         };
