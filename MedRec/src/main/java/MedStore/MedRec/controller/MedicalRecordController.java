@@ -2,12 +2,6 @@ package MedStore.MedRec.controller;
 
 import MedStore.MedRec.dto.internal.UserDto;
 import MedStore.MedRec.dto.outgoing.MedicalRecordDto;
-import MedStore.MedRec.entities.MedicalRecord;
-import MedStore.MedRec.enums.Role;
-import MedStore.MedRec.repository.LoginRepository;
-import MedStore.MedRec.repository.MedicalRecordRepository;
-import MedStore.MedRec.repository.TwoFARepository;
-import MedStore.MedRec.repository.UserRepository;
 import MedStore.MedRec.service.AuthenticationService;
 import MedStore.MedRec.service.MedicalRecordService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,24 +11,20 @@ import java.util.List;
 import org.apache.coyote.BadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class MedicalRecordController {
 
-    private final AuthenticationService authenticationService;
-    private final MedicalRecordService medicalRecordService;
+    @Autowired
+    private AuthenticationService authenticationService;
+    @Autowired
+    private MedicalRecordService medicalRecordService;
 
     private static final Logger log = LoggerFactory.getLogger(MedicalRecordController.class);
-
-    public MedicalRecordController(UserRepository userRepository, LoginRepository loginRepository,
-            MedicalRecordRepository medicalRecordRepository, TwoFARepository twoFARepository) {
-        this.medicalRecordService = new MedicalRecordService(medicalRecordRepository);
-        this.authenticationService = new AuthenticationService(userRepository, loginRepository, twoFARepository);
-    }
 
     @GetMapping("/users/me/medical-record/{medicalRecordId}")
     public MedicalRecordDto getMedicalRecord(HttpServletRequest request,

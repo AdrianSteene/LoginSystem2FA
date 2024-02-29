@@ -4,28 +4,23 @@ import MedStore.MedRec.dto.incoming.TwoFACode;
 import MedStore.MedRec.dto.internal.UserDto;
 import MedStore.MedRec.dto.outgoing.JWT;
 import MedStore.MedRec.dto.outgoing.LoginToken;
-import MedStore.MedRec.repository.LoginRepository;
-import MedStore.MedRec.repository.TwoFARepository;
-import MedStore.MedRec.repository.UserRepository;
 import MedStore.MedRec.service.AuthenticationService;
+import MedStore.MedRec.service.EmailService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.coyote.BadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class AuthController {
-    private final AuthenticationService authenticationService;
+    @Autowired
+    private AuthenticationService authenticationService;
 
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
-
-    public AuthController(UserRepository userRepository, LoginRepository loginRepository,
-            TwoFARepository twoFARepository) {
-        this.authenticationService = new AuthenticationService(userRepository, loginRepository, twoFARepository);
-    }
 
     @GetMapping("/auth/login")
     LoginToken login(HttpServletRequest request) throws BadRequestException {

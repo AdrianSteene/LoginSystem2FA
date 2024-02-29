@@ -13,6 +13,7 @@ public class TwoFA implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long twoFAId;
     private long userId;
     private String twoFACode;
     private Instant created;

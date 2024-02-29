@@ -13,7 +13,6 @@ import MedStore.MedRec.entities.User;
 import MedStore.MedRec.enums.Role;
 import MedStore.MedRec.repository.LoginRepository;
 import MedStore.MedRec.repository.TwoFARepository;
-import MedStore.MedRec.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
@@ -25,6 +24,7 @@ import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
@@ -36,12 +36,16 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
+@Service
 public class AuthenticationService extends GenericService {
+
+    @Autowired
+    private LoginRepository loginRepository;
+    @Autowired
+    private TwoFARepository twoFARepository;
     @Autowired
     private EmailService emailService;
 
-    private final LoginRepository loginRepository;
-    private final TwoFARepository twoFARepository;
     private final String AUTHORIZATION_HEADER = "Authorization";
     private final long JWT_EXPIRATION_TIME = 1/* days */ * 1/* hours */ * 15/* minutes */;
     private final long TWOFA_EXPIRATION_TIME = 30/* days */ * 24/* hours */ * 60/* minutes */;
@@ -49,13 +53,6 @@ public class AuthenticationService extends GenericService {
     private final String userId = "userId";
     private final String role = "role";
     private final String divisionId = "divisionId";
-
-    public AuthenticationService(UserRepository userRepository, LoginRepository loginRepository,
-            TwoFARepository twoFARepository) {
-        super(userRepository);
-        this.loginRepository = loginRepository;
-        this.twoFARepository = twoFARepository;
-    }
 
     public LoginToken login(HttpServletRequest request) throws BadRequestException {
         LoginCredentials loginCredentials = getBasicAuthLoginCredentials(request);
@@ -121,7 +118,7 @@ public class AuthenticationService extends GenericService {
     public JWT validate2FALogin(HttpServletRequest request, TwoFACode twoFACode) throws IllegalArgumentException {
         String loginToken = extractBearerToken(request);
         User user = validateLoginToken(loginToken);
-        validate2FACode(twoFACode, user.getUserId()); // TODO: Implement 2FA validation
+        validate2FACode(twoFACode, user.getUserId());
         return createJWT(user);
     }
 

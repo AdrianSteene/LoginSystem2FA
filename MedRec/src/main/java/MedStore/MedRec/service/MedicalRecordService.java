@@ -7,17 +7,18 @@ import MedStore.MedRec.enums.Role;
 import MedStore.MedRec.repository.MedicalRecordRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class MedicalRecordService {
 
     private final Logger log = LoggerFactory.getLogger(MedicalRecordService.class);
-    private final MedicalRecordRepository medicalRecordRepository;
+    @Autowired
+    private MedicalRecordRepository medicalRecordRepository;
 
-    public MedicalRecordService(MedicalRecordRepository medicalRecordRepository) {
-        this.medicalRecordRepository = medicalRecordRepository;
-    }
 
     public MedicalRecordDto getMedicalRecord(UserDto userDto, long medicalRecordId) {
         MedicalRecord medicalRecord = medicalRecordRepository.findByRecordId(medicalRecordId);

@@ -4,14 +4,14 @@ import MedStore.MedRec.entities.User;
 import MedStore.MedRec.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+@Service
 public class GenericService {
+    @Autowired
+    private UserRepository userRepository;
     protected static final Logger log = LoggerFactory.getLogger(GenericService.class);
-    private final UserRepository userRepository;
-
-    public GenericService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     public User getUser(String username) {
         return userRepository.findByUsername(username);
