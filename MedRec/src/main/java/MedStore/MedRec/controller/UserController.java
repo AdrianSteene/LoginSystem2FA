@@ -1,8 +1,9 @@
 package MedStore.MedRec.controller;
 
-import MedStore.MedRec.dto.internal.LoginCredentials;
+import MedStore.MedRec.dto.incoming.TwoFACode;
+import MedStore.MedRec.dto.internal.UserDto;
+import MedStore.MedRec.dto.outgoing.JWT;
 import MedStore.MedRec.dto.outgoing.LoginToken;
-import MedStore.MedRec.entities.User;
 import MedStore.MedRec.repository.LoginRepository;
 import MedStore.MedRec.repository.UserRepository;
 import MedStore.MedRec.service.AuthenticationService;
@@ -11,9 +12,8 @@ import org.apache.coyote.BadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Optional;
 
 @RestController
 public class UserController {
@@ -25,19 +25,29 @@ public class UserController {
         this.authenticationService = new AuthenticationService(userRepository, loginRepository);
     }
 
-    @GetMapping("/login")
+    @GetMapping("/auth/login")
     LoginToken login(HttpServletRequest request) throws BadRequestException {
         log.info("Login request received, requestId: " + request.getRequestId());
-        LoginCredentials loginCredentials = authenticationService.getBasicAuthLoginCredentials(request);
-        User user =
-                Optional
-                        .ofNullable(authenticationService.getUser(loginCredentials.username()))
-                        .orElseThrow(() -> {
-                            log.info("Unsuccessful login attempt, requestId: " + request.getRequestId());
-                            return new BadRequestException("Invalid login credentials");
-                        });
-        String salt = user.getSalt();
+        try {
+            return authenticationService.login(request);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid login credentials");
+        }
+    }
 
-        return authenticationService.createLoginToken(loginCredentials, salt, user);
+    @GetMapping("/auth/2fa")
+    JWT jwt(HttpServletRequest request, @RequestBody TwoFACode twoFACode) throws BadRequestException {
+        log.info("2fa request received, requestId: " + request.getRequestId());
+        if (twoFACode == null || twoFACode.twoFACode().isBlank()) throw new BadRequestException("Invalid login credentials");
+        return authenticationService.validate2FALogin(request, twoFACode);
+    }
+
+
+    //THIS IS AN ENDPOINT FOR TESTING
+    @GetMapping("/auth/testJWT")
+    public String testJWT(HttpServletRequest request) {
+        log.info("Test JWT request received, requestId: " + request.getRequestId());
+        UserDto userDto = authenticationService.validateJWT(request);
+        return "nice";
     }
 }
