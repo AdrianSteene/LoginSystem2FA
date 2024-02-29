@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class UserController {
+public class AuthController {
     private final AuthenticationService authenticationService;
 
-    private static final Logger log = LoggerFactory.getLogger(UserController.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
-    public UserController(UserRepository userRepository, LoginRepository loginRepository) {
+    public AuthController(UserRepository userRepository, LoginRepository loginRepository) {
         this.authenticationService = new AuthenticationService(userRepository, loginRepository);
     }
 
@@ -38,14 +38,15 @@ public class UserController {
     @GetMapping("/auth/2fa")
     JWT jwt(HttpServletRequest request, @RequestBody TwoFACode twoFACode) throws BadRequestException {
         log.info("2fa request received, requestId: " + request.getRequestId());
-        if (twoFACode == null || twoFACode.twoFACode().isBlank()) throw new BadRequestException("Invalid login credentials");
+        if (twoFACode == null || twoFACode.twoFACode().isBlank())
+            throw new BadRequestException("Invalid login credentials");
         return authenticationService.validate2FALogin(request, twoFACode);
     }
 
 
     //THIS IS AN ENDPOINT FOR TESTING
     @GetMapping("/auth/testJWT")
-    public String testJWT(HttpServletRequest request) {
+    String testJWT(HttpServletRequest request) {
         log.info("Test JWT request received, requestId: " + request.getRequestId());
         UserDto userDto = authenticationService.validateJWT(request);
         return "nice";
