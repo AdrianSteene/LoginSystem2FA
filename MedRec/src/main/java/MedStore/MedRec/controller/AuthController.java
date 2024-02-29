@@ -5,6 +5,7 @@ import MedStore.MedRec.dto.internal.UserDto;
 import MedStore.MedRec.dto.outgoing.JWT;
 import MedStore.MedRec.dto.outgoing.LoginToken;
 import MedStore.MedRec.repository.LoginRepository;
+import MedStore.MedRec.repository.TwoFARepository;
 import MedStore.MedRec.repository.UserRepository;
 import MedStore.MedRec.service.AuthenticationService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,8 +22,9 @@ public class AuthController {
 
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
-    public AuthController(UserRepository userRepository, LoginRepository loginRepository) {
-        this.authenticationService = new AuthenticationService(userRepository, loginRepository);
+    public AuthController(UserRepository userRepository, LoginRepository loginRepository,
+            TwoFARepository twoFARepository) {
+        this.authenticationService = new AuthenticationService(userRepository, loginRepository, twoFARepository);
     }
 
     @GetMapping("/auth/login")
@@ -43,8 +45,7 @@ public class AuthController {
         return authenticationService.validate2FALogin(request, twoFACode);
     }
 
-
-    //THIS IS AN ENDPOINT FOR TESTING
+    // THIS IS AN ENDPOINT FOR TESTING
     @GetMapping("/auth/testJWT")
     String testJWT(HttpServletRequest request) {
         log.info("Test JWT request received, requestId: " + request.getRequestId());

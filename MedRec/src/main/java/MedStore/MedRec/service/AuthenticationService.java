@@ -8,9 +8,11 @@ import MedStore.MedRec.dto.internal.UserDto;
 import MedStore.MedRec.dto.outgoing.JWT;
 import MedStore.MedRec.dto.outgoing.LoginToken;
 import MedStore.MedRec.entities.Login;
+import MedStore.MedRec.entities.TwoFA;
 import MedStore.MedRec.entities.User;
 import MedStore.MedRec.enums.Role;
 import MedStore.MedRec.repository.LoginRepository;
+import MedStore.MedRec.repository.TwoFARepository;
 import MedStore.MedRec.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -22,6 +24,7 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.coyote.BadRequestException;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
@@ -34,29 +37,34 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class AuthenticationService extends GenericService {
+    @Autowired
+    private EmailService emailService;
+
     private final LoginRepository loginRepository;
+    private final TwoFARepository twoFARepository;
     private final String AUTHORIZATION_HEADER = "Authorization";
-    private final long JWT_EXPIRATION_TIME = 1/*days*/ * 1/*hours*/ * 15/*minutes*/;
-    private final long LOGIN_TOKEN_EXPIRATION_TIME = 30/*days*/ * 24/*hours*/ * 60/*minutes*/;
-    private final String jwtSecret = "asdfSFS34wfsdfsdfSDSD32dfsddDDerQSNCK34SOWEK5354fdgdf4"; //TODO: fetch from vault
+    private final long JWT_EXPIRATION_TIME = 1/* days */ * 1/* hours */ * 15/* minutes */;
+    private final long TWOFA_EXPIRATION_TIME = 30/* days */ * 24/* hours */ * 60/* minutes */;
+    private final String jwtSecret = "asdfSFS34wfsdfsdfSDSD32dfsddDDerQSNCK34SOWEK5354fdgdf4"; // TODO: fetch from vault
     private final String userId = "userId";
     private final String role = "role";
     private final String divisionId = "divisionId";
 
-    public AuthenticationService(UserRepository userRepository, LoginRepository loginRepository) {
+    public AuthenticationService(UserRepository userRepository, LoginRepository loginRepository,
+            TwoFARepository twoFARepository) {
         super(userRepository);
         this.loginRepository = loginRepository;
+        this.twoFARepository = twoFARepository;
     }
 
     public LoginToken login(HttpServletRequest request) throws BadRequestException {
         LoginCredentials loginCredentials = getBasicAuthLoginCredentials(request);
-        User user =
-                Optional
-                        .ofNullable(getUser(loginCredentials.username()))
-                        .orElseThrow(() -> {
-                            log.info("Unsuccessful login attempt, requestId: " + request.getRequestId());
-                            return new IllegalArgumentException("Invalid login credentials");
-                        });
+        User user = Optional
+                .ofNullable(getUser(loginCredentials.username()))
+                .orElseThrow(() -> {
+                    log.info("Unsuccessful login attempt, requestId: " + request.getRequestId());
+                    return new IllegalArgumentException("Invalid login credentials");
+                });
         String salt = user.getSalt();
 
         return createLoginToken(loginCredentials, salt, user);
@@ -82,7 +90,8 @@ public class AuthenticationService extends GenericService {
         return new LoginCredentials(username, password);
     }
 
-    private LoginToken createLoginToken(LoginCredentials loginCredentials, String salt, User user) throws BadRequestException {
+    private LoginToken createLoginToken(LoginCredentials loginCredentials, String salt, User user)
+            throws BadRequestException {
         String passwordhash = PasswordEncryptor.encrypt(loginCredentials.password(), salt);
         if (PasswordEncryptor.isNotValidHash(user.getPasswordhash(), passwordhash)) {
             log.info("Unsuccessful login attempt for user: " + user.getUserId());
@@ -95,6 +104,16 @@ public class AuthenticationService extends GenericService {
             login.setCreated(Instant.now());
             login.setExpired(false);
             log.info("Created Login Token " + loginRepository.save(login));
+
+            TwoFA twoFA = new TwoFA();
+            twoFA.setUserId(user.getUserId());
+            twoFA.setTwoFACode(MedRecCryptUtils.random2FAString());
+            twoFA.setCreated(Instant.now());
+            twoFA.setExpired(false);
+            log.info("Created 2FA code " + twoFARepository.save(twoFA));
+
+            emailService.sendSimpleMessage(user.getUsername(), "2FA code", twoFA.getTwoFaCode());
+
             return new LoginToken(loginToken);
         }
     }
@@ -102,13 +121,14 @@ public class AuthenticationService extends GenericService {
     public JWT validate2FALogin(HttpServletRequest request, TwoFACode twoFACode) throws IllegalArgumentException {
         String loginToken = extractBearerToken(request);
         User user = validateLoginToken(loginToken);
-        validate2FACode(twoFACode); // TODO: Implement 2FA validation
+        validate2FACode(twoFACode, user.getUserId()); // TODO: Implement 2FA validation
         return createJWT(user);
     }
 
     private String extractBearerToken(HttpServletRequest request) {
         String authorizationHeader = request.getHeader(AUTHORIZATION_HEADER);
-        if (authorizationHeader == null || authorizationHeader.isBlank()) throw new IllegalArgumentException("Invalid login credentials");
+        if (authorizationHeader == null || authorizationHeader.isBlank())
+            throw new IllegalArgumentException("Invalid login credentials");
         return authorizationHeader.substring("Bearer".length()).trim().replaceAll("\"", "");
     }
 
@@ -122,27 +142,36 @@ public class AuthenticationService extends GenericService {
     }
 
     private boolean isNotWithinUsageTime(Login login) {
-        return login.getCreated().isBefore(Instant.now().minus(LOGIN_TOKEN_EXPIRATION_TIME, ChronoUnit.MINUTES));
+        return login.getCreated().isBefore(Instant.now().minus(TWOFA_EXPIRATION_TIME, ChronoUnit.MINUTES));
     }
 
-    private void validate2FACode(TwoFACode twoFACode) {
+    private boolean isNotWithinUsageTime(TwoFA twoFA) {
+        return twoFA.getCreated().isBefore(Instant.now().minus(TWOFA_EXPIRATION_TIME, ChronoUnit.MINUTES));
+    }
+
+    private void validate2FACode(TwoFACode twoFACode, long userId) {
+        TwoFA twoFA = twoFARepository.findByUserIdAndTwoFACode(userId, twoFACode.twoFACode());
+        if (twoFA == null || twoFA.isExpired() || isNotWithinUsageTime(twoFA)) {
+            throw new IllegalArgumentException("Invalid login credentials");
+        }
+        twoFA.setExpired(true);
+        twoFARepository.save(twoFA);
     }
 
     private JWT createJWT(User user) {
         Key hmacKey = new SecretKeySpec(Base64.getDecoder().decode(jwtSecret),
                 SignatureAlgorithm.HS256.getJcaName());
         Instant now = Instant.now();
-        String token =
-                Jwts.builder()
-                        .claim(userId, user.getUserId())
-                        .claim(role, user.getRole().toString())
-                        .claim(divisionId, user.getDivisionId())
-                        .setSubject(user.getUsername())
-                        .setId(UUID.randomUUID().toString())
-                        .setIssuedAt(Date.from(now))
-                        .setExpiration(Date.from(now.plus(JWT_EXPIRATION_TIME, ChronoUnit.MINUTES)))
-                        .signWith(hmacKey)
-                        .compact();
+        String token = Jwts.builder()
+                .claim(userId, user.getUserId())
+                .claim(role, user.getRole().toString())
+                .claim(divisionId, user.getDivisionId())
+                .setSubject(user.getUsername())
+                .setId(UUID.randomUUID().toString())
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(now.plus(JWT_EXPIRATION_TIME, ChronoUnit.MINUTES)))
+                .signWith(hmacKey)
+                .compact();
 
         return new JWT(token);
     }
@@ -157,10 +186,10 @@ public class AuthenticationService extends GenericService {
                     .build()
                     .parseClaimsJws(jwtToken);
             Claims body = jwtClaims.getBody();
-            long claimedUserID =
-                    (long) ((int) Optional.ofNullable(body.get(userId)).orElseThrow(() -> new IllegalArgumentException("Invalid token")));
-            Role claimedRole =
-                    Role.valueOf(Optional.ofNullable(body.get(role)).orElseThrow(() -> new IllegalArgumentException("Invalid token")).toString());
+            long claimedUserID = (long) ((int) Optional.ofNullable(body.get(userId))
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid token")));
+            Role claimedRole = Role.valueOf(Optional.ofNullable(body.get(role))
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid token")).toString());
             Object o = body.get(divisionId);
             Long claimedDivisionId = o == null ? null : (Long) ((long) ((int) o));
             return new UserDto(claimedUserID, claimedRole, claimedDivisionId);
@@ -179,4 +208,3 @@ public class AuthenticationService extends GenericService {
         }
     }
 }
-
