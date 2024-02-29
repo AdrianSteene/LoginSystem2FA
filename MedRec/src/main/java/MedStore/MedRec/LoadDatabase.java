@@ -43,7 +43,7 @@ class LoadDatabase {
 
     private User createAdmin() {
         User user = new User();
-        user.setUsername("Admin");
+        user.setUsername("da4136st-s@student.lu.se");
         Salt salt = new Salt();
         user.setSalt(salt.getSalt());
         user.setPasswordhash(PasswordEncryptor.encrypt("weakPassword", salt.getSalt()));
@@ -54,7 +54,7 @@ class LoadDatabase {
 
     private User createPatient() {
         User user = new User();
-        user.setUsername("Yazan");
+        user.setUsername("ya4652al-s@studen.lu.se");
         Salt salt = new Salt();
         user.setSalt(salt.getSalt());
         user.setPasswordhash(PasswordEncryptor.encrypt("weakPassword", salt.getSalt()));
@@ -65,7 +65,7 @@ class LoadDatabase {
 
     private User createNurse(long divisionId) {
         User user = new User();
-        user.setUsername("Adrian");
+        user.setUsername("ad3122st-s@student.lu.se");
         Salt salt = new Salt();
         user.setSalt(salt.getSalt());
         user.setPasswordhash(PasswordEncryptor.encrypt("weakPassword", salt.getSalt()));
@@ -77,7 +77,7 @@ class LoadDatabase {
 
     private User createDoctor(long divisionId) {
         User user = new User();
-        user.setUsername("Alvin");
+        user.setUsername("da4136st-s@student.lu.se");
         Salt salt = new Salt();
         user.setSalt(salt.getSalt());
         user.setPasswordhash(PasswordEncryptor.encrypt("weakPassword", salt.getSalt()));
@@ -88,7 +88,7 @@ class LoadDatabase {
 
     private User createGovorg() {
         User user = new User();
-        user.setUsername("SOCIALSTYRELSEN");
+        user.setUsername("da4136st-s@student.lu.se");
         Salt salt = new Salt();
         user.setSalt(salt.getSalt());
         user.setPasswordhash(PasswordEncryptor.encrypt("weakPassword", salt.getSalt()));
