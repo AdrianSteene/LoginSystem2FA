@@ -19,20 +19,39 @@ The login procedure involves a username, password, a second factor of authentica
 
 ## Installation
 
-(Provide installation instructions here)
+### Install Maven
+For Linux: 
+```     
+sudo apt update
+sudo apt install maven
+```
+
+For Mac: 
+```
+brew update
+brew install maven
+```
+
+### Install Java 21
+For Linux: 
+``` 
+sudo apt install openjdk-21-jdk
+```
+For Mac: 
+```
+brew install openjdk@21
+```
+
+### Install JKS Keystore and Add certificate 
+
+
+
 
 ## Usage
 
-(Provide usage instructions here)
-
 ## Contributing
-
-(Provide contributing guidelines here)
 
 ## License
 
-(Provide license information here)
-
 ## Contact
 
-(Provide contact information for the maintainers here)
