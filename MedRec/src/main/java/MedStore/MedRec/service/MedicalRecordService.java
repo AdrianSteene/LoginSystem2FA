@@ -5,7 +5,6 @@ import MedStore.MedRec.dto.outgoing.MedicalRecordDto;
 import MedStore.MedRec.entities.MedicalRecord;
 import MedStore.MedRec.enums.Role;
 import MedStore.MedRec.repository.MedicalRecordRepository;
-import org.apache.coyote.BadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
