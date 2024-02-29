@@ -6,6 +6,7 @@ import MedStore.MedRec.entities.MedicalRecord;
 import MedStore.MedRec.enums.Role;
 import MedStore.MedRec.repository.LoginRepository;
 import MedStore.MedRec.repository.MedicalRecordRepository;
+import MedStore.MedRec.repository.TwoFARepository;
 import MedStore.MedRec.repository.UserRepository;
 import MedStore.MedRec.service.AuthenticationService;
 import MedStore.MedRec.service.MedicalRecordService;
@@ -30,14 +31,14 @@ public class MedicalRecordController {
     private static final Logger log = LoggerFactory.getLogger(MedicalRecordController.class);
 
     public MedicalRecordController(UserRepository userRepository, LoginRepository loginRepository,
-                                   MedicalRecordRepository medicalRecordRepository) {
+            MedicalRecordRepository medicalRecordRepository, TwoFARepository twoFARepository) {
         this.medicalRecordService = new MedicalRecordService(medicalRecordRepository);
-        this.authenticationService = new AuthenticationService(userRepository, loginRepository);
+        this.authenticationService = new AuthenticationService(userRepository, loginRepository, twoFARepository);
     }
 
     @GetMapping("/users/me/medical-record/{medicalRecordId}")
     public MedicalRecordDto getMedicalRecord(HttpServletRequest request,
-                                             @PathVariable("medicalRecordId") long medicalRecordId) throws BadRequestException {
+            @PathVariable("medicalRecordId") long medicalRecordId) throws BadRequestException {
         log.info("Medical record request received, requestId: " + request.getRequestId());
         UserDto userDto = authenticationService.validateJWT(request);
         try {
