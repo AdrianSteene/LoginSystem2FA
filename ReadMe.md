@@ -43,7 +43,9 @@ brew install openjdk@21
 ```
 
 ### Install JKS Keystore and Add certificate 
-
+``` 
+keytool -import -alias springboot -file MedRec/src/main/resources/myCertificate.crt -keystore MedRec/src/main/resources/springboot.p12 -storepass storepassword 
+```
 
 
 
