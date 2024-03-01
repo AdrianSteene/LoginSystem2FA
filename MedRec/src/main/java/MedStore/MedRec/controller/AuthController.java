@@ -45,6 +45,7 @@ public class AuthController {
     String testJWT(HttpServletRequest request) {
         log.info("Test JWT request received, requestId: " + request.getRequestId());
         UserDto userDto = authenticationService.validateJWT(request);
+        System.out.println(userDto.userId() + " " + userDto.role() + " " + userDto.divisionId());
         return "nice";
     }
 }

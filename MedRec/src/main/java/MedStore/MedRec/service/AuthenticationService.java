@@ -122,20 +122,24 @@ public class AuthenticationService extends GenericService {
         return createJWT(user);
     }
 
-    private String extractBearerToken(HttpServletRequest request) {
+    private String extractBearerToken(HttpServletRequest request) throws IllegalArgumentException {
         String authorizationHeader = request.getHeader(AUTHORIZATION_HEADER);
         if (authorizationHeader == null || authorizationHeader.isBlank())
             throw new IllegalArgumentException("Invalid login credentials");
         return authorizationHeader.substring("Bearer".length()).trim().replaceAll("\"", "");
     }
 
-    private User validateLoginToken(String loginToken) {
+    private User validateLoginToken(String loginToken) throws IllegalArgumentException {
         Login login = loginRepository.findByLoginToken(loginToken);
         if (login == null || login.isExpired() || isNotWithinUsageTime(login))
             throw new IllegalArgumentException("Invalid login credentials");
         login.setExpired(true);
         loginRepository.save(login);
-        return getUser(login.getUserId());
+        return getUser(login.getUserId())
+                .orElseThrow(() -> {
+                    log.error("User not found for login token");
+                    return new IllegalArgumentException("Login Token field corrupted");
+                });
     }
 
     private boolean isNotWithinUsageTime(Login login) {
@@ -146,7 +150,7 @@ public class AuthenticationService extends GenericService {
         return twoFA.getCreated().isBefore(Instant.now().minus(TWOFA_EXPIRATION_TIME, ChronoUnit.MINUTES));
     }
 
-    private void validate2FACode(TwoFACode twoFACode, long userId) {
+    private void validate2FACode(TwoFACode twoFACode, long userId) throws IllegalArgumentException {
         TwoFA twoFA = twoFARepository.findByUserIdAndTwoFACode(userId, twoFACode.twoFACode());
         if (twoFA == null || twoFA.isExpired() || isNotWithinUsageTime(twoFA)) {
             throw new IllegalArgumentException("Invalid login credentials");

@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class GenericService {
     @Autowired
@@ -17,7 +19,7 @@ public class GenericService {
         return userRepository.findByUsername(username);
     }
 
-    public User getUser(long userId) {
-        return userRepository.findByUserId(userId);
+    public Optional<User> getUser(long userId) {
+        return userRepository.findById(userId);
     }
 }
