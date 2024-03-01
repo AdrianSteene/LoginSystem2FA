@@ -24,7 +24,9 @@ public class AuthController {
 
     @GetMapping("/auth/login")
     LoginToken login(HttpServletRequest request) throws BadRequestException {
-        log.info("Login request received, requestId: " + request.getRequestId());
+        log.info("Received login request - Method: {}, URI: {}, QueryString: {}, RemoteAddr: {}, Protocol: {}", 
+            request.getMethod(), request.getRequestURI(), request.getQueryString(), request.getRemoteAddr(), request.getProtocol());
+
         try {
             return authenticationService.login(request);
         } catch (IllegalArgumentException e) {
@@ -34,7 +36,9 @@ public class AuthController {
 
     @GetMapping("/auth/2fa")
     JWT jwt(HttpServletRequest request, @RequestBody TwoFACode twoFACode) throws BadRequestException {
-        log.info("2fa request received, requestId: " + request.getRequestId());
+        log.info("Received 2FA request - Method: {}, URI: {}, QueryString: {}, RemoteAddr: {}, Protocol: {}", 
+            request.getMethod(), request.getRequestURI(), request.getQueryString(), request.getRemoteAddr(), request.getProtocol());
+
         if (twoFACode == null || twoFACode.twoFACode().isBlank())
             throw new BadRequestException("Invalid login credentials");
         return authenticationService.validate2FALogin(request, twoFACode);
@@ -43,7 +47,9 @@ public class AuthController {
     // THIS IS AN ENDPOINT FOR TESTING
     @GetMapping("/auth/testJWT")
     String testJWT(HttpServletRequest request) {
-        log.info("Test JWT request received, requestId: " + request.getRequestId());
+        log.info("Received JWT request - Method: {}, URI: {}, QueryString: {}, RemoteAddr: {}, Protocol: {}", 
+            request.getMethod(), request.getRequestURI(), request.getQueryString(), request.getRemoteAddr(), request.getProtocol());
+
         UserDto userDto = authenticationService.validateJWT(request);
         System.out.println(userDto.userId() + " " + userDto.role() + " " + userDto.divisionId());
         return "nice";
