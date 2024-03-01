@@ -1,6 +1,7 @@
 package MedStore.MedRec.service;
 
 import MedStore.MedRec.dto.internal.UserDto;
+import MedStore.MedRec.dto.outgoing.CreateMedicalRecordDto;
 import MedStore.MedRec.dto.outgoing.MedicalRecordDto;
 import MedStore.MedRec.entities.MedicalRecord;
 import MedStore.MedRec.enums.Role;
@@ -19,7 +20,6 @@ public class MedicalRecordService {
     @Autowired
     private MedicalRecordRepository medicalRecordRepository;
 
-
     public MedicalRecordDto getMedicalRecord(UserDto userDto, long medicalRecordId) {
         MedicalRecord medicalRecord = medicalRecordRepository.findByRecordId(medicalRecordId);
 
@@ -31,6 +31,22 @@ public class MedicalRecordService {
             return toDto(medicalRecord);
         } else {
             log.error("User" + userDto.userId() + "not authorized to access medical record " + medicalRecordId);
+            throw new IllegalArgumentException("User not authorized to access this medical record");
+        }
+    }
+
+    public CreateMedicalRecordDto createMedicalRecord(UserDto user, long patientId, long nurseId, String note) {
+        if (user.role().equals(Role.DOCTOR)) {
+            MedicalRecord medicalRecord = new MedicalRecord();
+            medicalRecord.setDivisionId(user.divisionId());
+            medicalRecord.setDoctorId(user.userId());
+            medicalRecord.setNote(note);
+            medicalRecord.setNurseId(nurseId);
+            medicalRecord.setPatientId(patientId);
+            medicalRecordRepository.save(medicalRecord);
+            return createDto(medicalRecord);
+        } else {
+            log.error("User" + user.userId() + "not authorized to access medical record ");
             throw new IllegalArgumentException("User not authorized to access this medical record");
         }
     }
@@ -50,7 +66,8 @@ public class MedicalRecordService {
         boolean patientPredicate = user.role().equals(Role.PATIENT) && user.userId() == medicalRecord.getPatientId();
         boolean nursePredicate = user.role().equals(Role.NURSE) && user.userId() == medicalRecord.getNurseId();
         boolean doctorPredicate = user.role().equals(Role.DOCTOR) && user.userId() == medicalRecord.getDoctorId();
-        boolean divisionPredicate = (user.role().equals(Role.DOCTOR) || user.role().equals(Role.NURSE)) && user.divisionId().equals(medicalRecord.getDivisionId());
+        boolean divisionPredicate = (user.role().equals(Role.DOCTOR) || user.role().equals(Role.NURSE))
+                && user.divisionId().equals(medicalRecord.getDivisionId());
         boolean nurseOrDoctorPredicate = nursePredicate || doctorPredicate || divisionPredicate;
         boolean govorgPredicate = user.role().equals(Role.GOVORG);
         return patientPredicate || nurseOrDoctorPredicate || govorgPredicate;
@@ -58,6 +75,12 @@ public class MedicalRecordService {
 
     private MedicalRecordDto toDto(MedicalRecord medicalRecord) {
         return new MedicalRecordDto(medicalRecord.getRecordId(), medicalRecord.getPatientId(),
+                medicalRecord.getNurseId(), medicalRecord.getDoctorId(), medicalRecord.getDivisionId(),
+                medicalRecord.getNote());
+    }
+
+    private CreateMedicalRecordDto createDto(MedicalRecord medicalRecord) {
+        return new CreateMedicalRecordDto(medicalRecord.getRecordId(), medicalRecord.getPatientId(),
                 medicalRecord.getNurseId(), medicalRecord.getDoctorId(), medicalRecord.getDivisionId(),
                 medicalRecord.getNote());
     }
