@@ -47,6 +47,9 @@ brew install openjdk@21
 keytool -import -alias springboot -file MedRec/src/main/resources/myCertificate.crt -keystore MedRec/src/main/resources/springboot.p12 -storepass storepassword 
 ```
 
+## Demo of login process
+
+https://github.com/AdrianSteene/LoginSystem2FA/assets/90616845/0701d858-b9a2-4cfb-9a2b-8e6b54eca039
 
 
 ## Usage
